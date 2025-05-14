@@ -34,8 +34,16 @@ def load_class_names(file_path="classes.json"):
         return []
 
 
-model = load_model()
-CLASS_NAMES = load_class_names()
+# Loading model
+with st.spinner("Loading model..."):
+    model = load_model()
+    CLASS_NAMES = load_class_names()
+
+# Model loading error handling
+if model is None:
+    st.warning(
+        "Failed to load the model. Please ensure that the model file is correct and try again."
+    )
 
 
 # Image preprocessing function
@@ -79,32 +87,47 @@ def main():
     )
 
     if uploaded_file is not None:
-        # Read and display the uploaded image (resized for display)
-        image = np.array(Image.open(uploaded_file))
-        display_image = resize_display_image(image)
-        st.image(display_image, caption="Uploaded Image", use_container_width=True)
+        try:
+            with st.spinner("Analyzing image..."):
+                # Read and process image
+                image = np.array(Image.open(uploaded_file))
+                processed_image = preprocess_image(image)
+                predictions = model.predict(processed_image)
 
-        # Preprocess and predict
-        processed_image = preprocess_image(image)
-        predictions = model.predict(processed_image)
+                # Create two columns
+                col1, col2 = st.columns([2, 3])  # Adjust the ratio as needed
 
-        # Get the class with highest probability
-        max_prob_index = np.argmax(predictions)
-        max_prob = predictions[0][max_prob_index]
-        predicted_class = CLASS_NAMES[max_prob_index]
+                with col1:
+                    # Display resized image
+                    display_image = resize_display_image(image)
+                    st.image(
+                        display_image,
+                        caption="Uploaded Image",
+                        use_container_width=True,
+                    )
 
-        # Display results
-        st.subheader("Prediction Result")
-        st.success(f"Most likely traffic sign: **{predicted_class}**")
-        st.metric("Confidence", f"{max_prob:.2%}")
-        st.progress(float(max_prob), text="Confidence level")
+                with col2:
+                    # Get prediction results
+                    max_prob_index = np.argmax(predictions)
+                    max_prob = predictions[0][max_prob_index]
+                    predicted_class = CLASS_NAMES[max_prob_index]
 
-        # Show runner-up predictions
-        with st.expander("Show other possible predictions"):
-            top_k = 5
-            top_indices = np.argsort(predictions[0])[-top_k:][::-1]
-            for i in top_indices:
-                st.write(f"- {CLASS_NAMES[i]}: {predictions[0][i]:.2%}")
+                    # Display results
+                    st.subheader("Prediction Result")
+                    st.success(f"Most likely traffic sign: **{predicted_class}**")
+                    st.metric("Confidence", f"{max_prob:.2%}")
+                    st.progress(float(max_prob), text="Confidence level")
+
+                # Show runner-up predictions
+                with st.expander("Show other possible predictions"):
+                    top_k = 5
+                    top_indices = np.argsort(predictions[0])[-top_k:][::-1]
+                    for i in top_indices:
+                        st.write(f"- {CLASS_NAMES[i]}: {predictions[0][i]:.2%}")
+
+        except Exception as e:
+            st.error(f"Error processing the image: {str(e)}")
+            st.warning("Please ensure the image is a valid traffic sign image.")
 
 
 if __name__ == "__main__":
