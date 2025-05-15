@@ -16,8 +16,8 @@ A web-based Traffic Sign Classification app built with **Streamlit** and **Tenso
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/traffic-sign-classifier.git
-cd traffic-sign-classifier
+git clone https://github.com/alsabur20/trafficsignnet.git
+cd trafficsignnet
 ```
 
 ### 2. Create a Virtual Environment (Recommended)
